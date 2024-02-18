@@ -18,7 +18,6 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Input } from "./components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
 
 type typeRepos = {
   name: string;
