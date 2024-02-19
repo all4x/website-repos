@@ -19,6 +19,8 @@ import {
 } from "@/components/ui/accordion";
 import { Input } from "./components/ui/input";
 
+const token = import.meta.env.VITE_GITHUB_TOKEN;
+
 type typeRepos = {
   name: string;
   language: string;
@@ -39,21 +41,55 @@ function App() {
   const [repos, setRepos] = useState<typeRepos[]>([]);
   const [user, setUser] = useState<typeUser>();
   const [editingUser, setEditingUser] = useState("all4x");
+  const [handleUser, setHandleUser] = useState("");
 
   useEffect(() => {
-    fetch(`https://api.github.com/users/${editingUser}/repos`).then(
-      (response) =>
-        response.json().then((data: typeRepos[]) => {
-          setRepos(data);
-        }),
-    );
+    console.log(token);
+    const headers = {
+      Authorization: `token ${token}`,
+    };
 
-    fetch(`https://api.github.com/users/${editingUser}`).then((response) => {
-      response.json().then((data: typeUser) => {
-        setUser(data);
+    fetch(`https://api.github.com/users/${editingUser}/repos`, {
+      headers: headers,
+    })
+      .then((response) => {
+        if (response.ok) {
+          return response.json();
+        } else {
+          throw new Error("User not found");
+        }
+      })
+      .then((data: typeRepos[]) => {
+        setRepos(data);
+      })
+      .catch((error) => {
+        console.error("Error fetching repositories:", error);
+        setRepos([]);
       });
-    });
+
+    fetch(`https://api.github.com/users/${editingUser}`, {
+      headers: headers,
+    })
+      .then((response) => {
+        if (response.ok) {
+          return response.json();
+        } else {
+          throw new Error("User not found");
+        }
+      })
+      .then((data: typeUser) => {
+        setUser(data);
+      })
+      .catch((error) => {
+        console.error("Error fetching user data:", error);
+        setUser(undefined);
+      });
   }, [editingUser]);
+
+  const handleFormSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setEditingUser(handleUser);
+  };
 
   return (
     <div className="h-screen bg-gray-950">
@@ -67,12 +103,29 @@ function App() {
                   {user?.login.substring(0, 2).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
-              <Input
-                type="text"
-                defaultValue={editingUser}
-                className="text-white border-gray-600"
-                onBlur={(e) => setEditingUser(e.target.value)}
-              />
+              <form
+                onSubmit={handleFormSubmit}
+                className="flex justify-center items-center gap-3"
+              >
+                <Input
+                  type="text"
+                  defaultValue={editingUser}
+                  className="text-white border-gray-600 max-w-60"
+                  onChange={(e) => setHandleUser(e.target.value)}
+                />
+                <Button
+                  variant="secondary"
+                  type="submit"
+                  className="px-3 bg-gray-800 text-white border-l border-gray-600"
+                >
+                  Buscar
+                </Button>
+              </form>
+              {repos.length === 0 && (
+                <h1 className="text-white text-nowrap font-mono pt-3">
+                  Este usuário não possui repositórios.
+                </h1>
+              )}
             </div>
             <div className="text-white  font-sans">
               <Accordion type="single" collapsible>
